@@ -24,7 +24,9 @@
     busy: false,
     scannedAt: null,
     ctxText: "",
-    layout: "list"
+    layout: "list",
+    psort: "active",
+    pdir: -1
   };
 
   try { if (localStorage.getItem("layout") === "grid") state.layout = "grid"; } catch (e) { /* storage can be blocked */ }
@@ -299,7 +301,13 @@
       g.agents[f.source] = true;
       g.newest = Math.max(g.newest, f.modified || 0);
     });
-    order.sort(function (a, b) { return b.newest - a.newest; });
+    var by = {
+      project: function (a, b) { return a.path.localeCompare(b.path); },
+      assistants: function (a, b) { return Object.keys(a.agents).length - Object.keys(b.agents).length; },
+      sessions: function (a, b) { return a.n - b.n; },
+      active: function (a, b) { return a.newest - b.newest; }
+    };
+    order.sort(function (a, b) { return by[state.psort](a, b) * state.pdir; });
     $("count").textContent = order.length.toLocaleString() + (order.length === 1 ? " project" : " projects");
 
     var raw = state.q.trim();
@@ -316,7 +324,14 @@
       }).join("");
       return;
     }
-    var head = '<div class="phead"><span>Project</span><span class="pa">Assistants</span><span class="r">Sessions</span><span class="r">Active</span></div>';
+    function hcell(key, label, cls) {
+      var on = state.psort === key;
+      var arrow = on ? (state.pdir < 0 ? " &darr;" : " &uarr;") : "";
+      return '<button type="button" class="sh ' + cls + (on ? " on" : "") + '" data-sort="' + key + '">' +
+        label + '<span class="arr">' + arrow + "</span></button>";
+    }
+    var head = '<div class="phead">' + hcell("project", "Project", "") + hcell("assistants", "Assistants", "pa") +
+      hcell("sessions", "Sessions", "r") + hcell("active", "Active", "r") + "</div>";
     $("projects").innerHTML = order.length ? head + order.map(function (g) {
       var names = Object.keys(g.agents);
       return '<button class="prow" type="button" data-project="' + esc(g.path) + '">' +
@@ -789,6 +804,17 @@
     copyText(state.open.path).then(function (ok) { toast(ok ? "Path copied" : "Couldn't copy: the clipboard is blocked"); });
   });
 
+  /* custom title bar: window controls go through the Tauri window API */
+  /* custom title bar: window controls go through the Tauri window API */
+  var win = window.__TAURI__ && window.__TAURI__.window ? window.__TAURI__.window.getCurrentWindow() : null;
+  if (win && $("winMin")) {
+    $("winMin").addEventListener("click", function () { win.minimize(); });
+    $("winMax").addEventListener("click", function () { win.toggleMaximize(); });
+    $("winClose").addEventListener("click", function () { win.close(); });
+  } else if ($("winCtl")) {
+    $("winCtl").hidden = true;
+  }
+
   $("projCopy").addEventListener("click", function () {
     if (!projCache.ctx) return;
     copyText(projCache.ctx).then(function (ok) {
@@ -900,6 +926,14 @@
   $("projects").addEventListener("click", function (e) {
     var act = e.target.closest("[data-act]");
     if (act && act.dataset.act === "clear") { clearAll(); return; }
+    var sh = e.target.closest("[data-sort]");
+    if (sh) {
+      var key = sh.dataset.sort;
+      if (state.psort === key) state.pdir = -state.pdir;
+      else { state.psort = key; state.pdir = key === "project" ? 1 : -1; }
+      render();
+      return;
+    }
     var row = e.target.closest(".prow, .pcard");
     if (!row) return;
     clearTimeout(searchTimer);
