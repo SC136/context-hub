@@ -1,0 +1,16 @@
+{
+  "name": "context-hub",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Context Hub - browse and transfer AI coding assistant sessions",
+  "license": "MIT",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build": "tauri build",
+    "scan": "cargo run --manifest-path src-tauri/Cargo.toml --bin context-hub -- --scan-only"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}

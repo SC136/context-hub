@@ -1,0 +1,15 @@
+{
+  "bundle": {
+    "active": true,
+    "targets": ["msi", "nsis"],
+    "icon": [],
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": ""
+    }
+  },
+  "productName": "Context Hub",
+  "identifier": "com.contexthub.app",
+  "version": "1.0.0"
+}

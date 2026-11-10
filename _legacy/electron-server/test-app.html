@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>App Test - Verify Working</title>
+    <style>
+        body { font-family: Arial; padding: 40px; background: #f5f5f5; }
+        .card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        h1 { color: #333; }
+        .success { color: green; font-weight: bold; }
+        .error { color: red; font-weight: bold; }
+        pre { background: #f0f0f0; padding: 15px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Context Hub App - Verification Test</h1>
+    
+    <div class="card">
+        <h2>✅ Check 1: Is the app running?</h2>
+        <p id="appStatus">Checking...</p>
+    </div>
+    
+    <div class="card">
+        <h2>✅ Check 2: Can we access file system?</h2>
+        <p id="fsStatus">Testing...</p>
+    </div>
+    
+    <div class="card">
+        <h2>✅ Check 3: Environment Details</h2>
+        <pre id="envDetails">Loading...</pre>
+    </div>
+    
+    <div class="card">
+        <h2>📋 What This Test Does:</h2>
+        <ul>
+            <li>Checks if Electron is loaded properly</li>
+            <li>Verifies Node.js integration</li>
+            <li>Tests basic file system operations</li>
+            <li>Confirms all required modules are present</li>
+        </ul>
+    </div>
+
+    <script>
+        function checkElectron() {
+            // Check if running in Electron environment
+            const isElectron = !!(window.process && window.process.versions && window.process.versions.electron);
+            
+            const status = document.getElementById('appStatus');
+            if (isElectron) {
+                status.innerHTML = '<span class="success">✓ YES! Running in native Electron desktop app</span>';
+                
+                // Additional checks
+                console.log('Electron version:', window.process.versions.electron);
+                console.log('Chrome version:', window.process.versions.chrome);
+                console.log('Node version:', window.process.versions.node);
+            } else {
+                status.innerHTML = '<span class="error">✗ NO! Not running in Electron. Opening HTML directly won\'t work.</span>';
+            }
+            
+            // Update env details
+            const envDetails = document.getElementById('envDetails');
+            envDetails.textContent = `
+Platform: ${process.platform || 'browser'}
+Architecture: ${process.arch || 'unknown'}
+Process Type: ${window.process?.type || 'N/A'}
+Is Electron: ${isElectron}
+Process Versions:
+${JSON.stringify(window.process?.versions, null, 2)}
+            `;
+        }
+
+        function checkFileSystemAccess() {
+            const fsStatus = document.getElementById('fsStatus');
+            
+            if (typeof require !== 'undefined') {
+                try {
+                    const fs = require('fs');
+                    const path = require('path');
+                    
+                    // Test basic file read
+                    const homeDir = process.env.HOME || process.env.USERPROFILE || '';
+                    
+                    fsStatus.innerHTML = `
+<span class="success">✓ File System Module Available!</span><br><br>
+Can access Node.js file system API<br>
+User Home Directory: <code>${homeDir}</code><br>
+Modules Loaded:<br>
+- fs: ${typeof fs !== 'undefined' ? 'OK' : 'ERROR'}<br>
+- path: ${typeof path !== 'undefined' ? 'OK' : 'ERROR'}<br>
+                    `;
+                    
+                    // Show some info about what can be scanned
+                    if (homeDir) {
+                        fsStatus.innerHTML += `<br><strong>Would scan these locations:</strong><br>`;
+                        [
+                            '.claude',
+                            '.cursor', 
+                            '.codex',
+                            '.opencode',
+                            '.trae',
+                            '.antigravity'
+                        ].forEach(folder => {
+                            const fullPath = path.join(homeDir, folder);
+                            const exists = fs.existsSync(fullPath);
+                            fsStatus.innerHTML += `- ${folder}: ${exists ? 'Found ✓' : 'Not installed ⚠'}<br>`;
+                        });
+                    }
+                } catch (error) {
+                    fsStatus.innerHTML = `<span class="error">✗ Error: ${error.message}</span>`;
+                }
+            } else {
+                fsStatus.innerHTML = `<span class="error">✗ Cannot access file system. Running in browser mode only.</span>`;
+            }
+        }
+
+        // Run tests when page loads
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                checkElectron();
+                checkFileSystemAccess();
+            }, 100);
+        });
+    </script>
+</body>
+</html>

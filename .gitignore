@@ -1,0 +1,15 @@
+node_modules/
+.DS_Store
+*.log
+npm-debug.log*
+.yarn-integrity
+.cache/
+dist/
+build/
+src-tauri/target/
+src-tauri/gen/schemas/
+target/
+release/
+*.exe
+*.msi
+!icons/*.exe

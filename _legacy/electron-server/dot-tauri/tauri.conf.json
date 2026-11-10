@@ -1,0 +1,15 @@
+//! Tauri configuration
+
+[build]
+# Desktop API is enabled by default, but you can disable it if not needed.
+desktop-api = "allowed"
+
+[context-menu]
+enable = true
+
+[security]
+csp = null
+
+[tray]
+icon_path = "icons/tray.ico"
+icon_as_template = false

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Context Hub</title>
+<meta name="theme-color" content="#0f1113">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7.5"/><path d="m20.5 20.5-4.2-4.2"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6 6 6M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.2A8.2 8.2 0 0 1 9.8 4a8.2 8.2 0 1 0 10.2 10.2Z"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 12a8 8 0 1 1-2.4-5.7"/><path d="M20 4v5h-5"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+</svg>
+
+<a class="skip" href="#main">Skip to sessions</a>
+
+<div class="app">
+
+  <aside class="rail" id="rail" aria-label="Library">
+    <div class="brand">Context Hub</div>
+
+    <nav class="views" aria-label="Views">
+      <button class="view-btn" type="button" data-view="timeline" aria-current="true">Timeline</button>
+      <button class="view-btn" type="button" data-view="projects">Projects</button>
+    </nav>
+
+    <div class="rail-head">
+      <span>Assistants</span>
+      <b id="agentTotal" class="mono"></b>
+    </div>
+    <div class="agents" id="agents"></div>
+
+    <div class="rail-foot">
+      <button id="scanBtn" class="btn" type="button">
+        <svg class="ic" aria-hidden="true"><use href="#i-refresh"/></svg>
+        <span id="scanLabel">Scan again</span>
+      </button>
+      <p id="scanned" class="mono">Not scanned yet</p>
+    </div>
+  </aside>
+
+  <main class="main" id="main" tabindex="-1">
+
+    <header class="bar">
+      <button id="railToggle" class="icon-btn only-narrow" type="button" aria-label="Show library">
+        <svg class="ic" aria-hidden="true"><use href="#i-menu"/></svg>
+      </button>
+
+      <div class="bar-lead">
+        <h1 id="title">Timeline</h1>
+        <p id="count" class="mono"></p>
+      </div>
+
+      <div class="bar-tools">
+        <div class="seg" id="layoutSeg" role="group" aria-label="Project layout" hidden>
+          <button type="button" data-layout="list" aria-pressed="true">List</button>
+          <button type="button" data-layout="grid" aria-pressed="false">Grid</button>
+        </div>
+        <label class="search">
+          <svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>
+          <input id="search" type="search" placeholder="Search sessions&hellip;" aria-label="Search sessions" autocomplete="off" spellcheck="false">
+          <kbd aria-hidden="true">/</kbd>
+        </label>
+        <button id="themeBtn" class="icon-btn" type="button" aria-label="Switch theme">
+          <svg class="ic" aria-hidden="true"><use id="themeIcon" href="#i-sun"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div class="filters" id="filters" hidden></div>
+
+    <section class="proj" id="proj" aria-label="Project summary" hidden>
+      <div class="proj-main">
+        <p class="proj-k">Last worked on <span id="projMeta" class="mono"></span></p>
+        <div class="proj-last" id="projLast" aria-live="polite"></div>
+      </div>
+      <div class="proj-actions">
+        <button id="projCopy" class="btn primary" type="button" disabled>Copy project context</button>
+      </div>
+    </section>
+
+    <section class="view" id="viewTimeline" aria-label="Timeline">
+      <div class="ribbon" id="ribbon" aria-hidden="true"></div>
+      <div class="scroll" id="scroll"><div id="days"></div></div>
+    </section>
+
+    <section class="view" id="viewProjects" aria-label="Projects" hidden>
+      <div class="scroll"><div id="projects"></div></div>
+    </section>
+
+    <section class="state" id="state" hidden>
+      <h2 id="stateTitle"></h2>
+      <p id="stateText"></p>
+      <div class="state-actions">
+        <button id="stateRetry" class="btn" type="button">Scan again</button>
+      </div>
+      <form class="folder" id="folderForm">
+        <label for="folderPath">Or open a folder of transcripts</label>
+        <div class="folder-row">
+          <input id="folderPath" type="text" placeholder="C:\path\to\sessions" autocomplete="off" spellcheck="false">
+          <button class="btn" type="submit">Open folder</button>
+        </div>
+      </form>
+    </section>
+
+  </main>
+
+  <aside class="insp" id="insp" aria-label="Session details" hidden>
+    <header class="insp-head">
+      <div class="insp-title">
+        <h2 id="iTitle"></h2>
+        <p id="iPath" class="mono"></p>
+      </div>
+      <button id="iClose" class="icon-btn" type="button" aria-label="Close session">
+        <svg class="ic" aria-hidden="true"><use href="#i-x"/></svg>
+      </button>
+    </header>
+    <div class="insp-scroll" id="iScroll">
+      <dl class="meta" id="iMeta"></dl>
+      <div class="insp-actions">
+        <button id="iCopyCtx" class="btn primary" type="button">Copy as context</button>
+        <button id="iCopyPath" class="btn" type="button">Copy path</button>
+      </div>
+      <div class="insp-body" id="iBody"></div>
+    </div>
+  </aside>
+
+</div>
+
+<div class="rail-scrim" id="scrim" hidden></div>
+<div class="tip" id="tip" role="presentation"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
