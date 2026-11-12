@@ -123,6 +123,32 @@ Add to the `possible_paths` array in `src/main.rs`:
 - Use "Select Directory" to manually browse
 - Check if your AI agent actually stores sessions locally
 
+## Releases and auto-update
+
+Releases are built by `.github/workflows/release.yml` when a `v*` tag is pushed, and the app
+updates itself from GitHub Releases (`https://github.com/SC136/context-hub/releases/latest/download/latest.json`).
+
+Updater artifacts are signed. The public key lives in `src-tauri/tauri.conf.json`
+(`plugins.updater.pubkey`); the private key must never be committed. The workflow reads it from
+two repository secrets:
+
+| Secret | Value |
+|---|---|
+| `TAURI_SIGNING_PRIVATE_KEY` | Contents of the private key file |
+| `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` | Its password, empty if the key has none |
+
+Generate a keypair with `npm run tauri -- signer generate -w ~/.tauri/context-hub.key` and copy
+the new public key into `tauri.conf.json`. Changing the key pair breaks updates for anyone on an
+older build, so keep one key for the life of the app.
+
+A local release build also needs the private key in the environment:
+
+```powershell
+$env:TAURI_SIGNING_PRIVATE_KEY = Get-Content "$env:USERPROFILE\.tauri\context-hub.key" -Raw
+$env:TAURI_SIGNING_PRIVATE_KEY_PASSWORD = ""
+npm run build
+```
+
 ## License
 
 MIT

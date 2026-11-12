@@ -7,6 +7,8 @@ use std::fs;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
+use tauri::Emitter;
+use tauri_plugin_updater::UpdaterExt;
 
 const FILES_DEPTH: usize = 8;
 const STORES_DEPTH: usize = 3;
@@ -904,6 +906,55 @@ fn create_transfer_guide(target_agent: String) -> Result<String, String> {
     Ok(guide)
 }
 
+#[derive(Serialize)]
+struct UpdateInfo {
+    version: String,
+    current: String,
+    notes: Option<String>,
+}
+
+#[derive(Clone, Serialize)]
+struct UpdateProgress {
+    downloaded: u64,
+    total: Option<u64>,
+}
+
+/// Is there a newer release on the update endpoint?
+#[tauri::command]
+async fn check_for_update(app: tauri::AppHandle) -> Result<Option<UpdateInfo>, String> {
+    let updater = app.updater().map_err(|e| e.to_string())?;
+    let found = updater.check().await.map_err(|e| e.to_string())?;
+    Ok(found.map(|u| UpdateInfo {
+        version: u.version,
+        current: u.current_version,
+        notes: u.body,
+    }))
+}
+
+/// Download and install the pending update. On Windows this hands over to the
+/// NSIS installer, which restarts the app, so the command never comes back.
+#[tauri::command]
+async fn install_update(app: tauri::AppHandle) -> Result<(), String> {
+    let updater = app.updater().map_err(|e| e.to_string())?;
+    let Some(update) = updater.check().await.map_err(|e| e.to_string())? else {
+        return Ok(());
+    };
+
+    let progress_app = app.clone();
+    update
+        .download_and_install(
+            move |downloaded, total| {
+                let _ = progress_app.emit(
+                    "update-progress",
+                    UpdateProgress { downloaded: downloaded as u64, total },
+                );
+            },
+            || {},
+        )
+        .await
+        .map_err(|e| e.to_string())
+}
+
 #[cfg(windows)]
 fn attach_console() {
     // A GUI-subsystem exe has no console of its own. When it is started from a
@@ -979,6 +1030,7 @@ fn main() {
     }
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .invoke_handler(tauri::generate_handler![
             scan_directories,
             list_files,
@@ -986,7 +1038,9 @@ fn main() {
             read_tail,
             recent_sessions,
             all_sessions,
-            create_transfer_guide
+            create_transfer_guide,
+            check_for_update,
+            install_update
         ])
         .run(tauri::generate_context!())
         .expect("error while running Context Hub");

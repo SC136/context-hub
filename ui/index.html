@@ -57,6 +57,7 @@
         <span id="scanLabel">Scan again</span>
       </button>
       <p id="scanned" class="mono">Not scanned yet</p>
+      <button id="updCheck" class="link" type="button" hidden>Check for updates</button>
     </div>
   </aside>
 
@@ -149,6 +150,15 @@
 </div>
 
 <div class="rail-scrim" id="scrim" hidden></div>
+
+<div class="upd" id="upd" role="status" aria-live="polite" hidden>
+  <p class="upd-text"><b id="updVer"></b> <span id="updNote"></span></p>
+  <div class="upd-actions">
+    <button id="updGo" class="btn primary" type="button">Update and restart</button>
+    <button id="updSkip" class="btn" type="button">Later</button>
+  </div>
+</div>
+
 <div class="tip" id="tip" role="presentation"></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 

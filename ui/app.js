@@ -1013,9 +1013,95 @@
     }
   });
 
+  /* ---------- updates ------------------------------------------------------ */
+
+  var update = { info: null, busy: false, hideTimer: null };
+
+  function updateNote(info) {
+    var first = info.notes ? String(info.notes).split(/\r?\n/).filter(function (l) { return l.trim(); })[0] : "";
+    return first ? sentence(clip(first, 150)) : "Restart to install it.";
+  }
+
+  function showUpdate(info) {
+    update.info = info;
+    clearTimeout(update.hideTimer);
+    $("updVer").textContent = "Version " + info.version + " is ready";
+    $("updNote").textContent = updateNote(info);
+    $("updGo").disabled = false;
+    $("updSkip").disabled = false;
+    $("updGo").textContent = "Update and restart";
+    var box = $("upd");
+    box.hidden = false;
+    requestAnimationFrame(function () { box.classList.add("show"); });
+  }
+
+  function hideUpdate() {
+    var box = $("upd");
+    box.classList.remove("show");
+    update.hideTimer = setTimeout(function () { box.hidden = true; }, 200);
+  }
+
+  async function checkUpdates(manual) {
+    if (!invoke || update.busy) return;
+    if (manual) toast("Checking for updates…");
+    try {
+      var info = await invoke("check_for_update");
+      if (info) showUpdate(info);
+      else if (manual) toast("You're on the latest version");
+      else hideUpdate();
+    } catch (e) {
+      if (manual) toast("Couldn't check for updates");
+      console.warn("update check failed", e);
+    }
+  }
+
+  async function installUpdate() {
+    if (!invoke || update.busy) return;
+    update.busy = true;
+    $("updGo").disabled = true;
+    $("updSkip").disabled = true;
+    $("updGo").textContent = "Downloading…";
+
+    // Progress is optional: if the event API is unavailable the label just stays put.
+    var event = window.__TAURI__ && window.__TAURI__.event;
+    var unlisten = null;
+    if (event && event.listen) {
+      try {
+        unlisten = await event.listen("update-progress", function (e) {
+          var d = e.payload || {};
+          if (!d.total) { $("updGo").textContent = "Downloading " + bytes(d.downloaded); return; }
+          $("updGo").textContent = "Downloading " + Math.min(100, Math.round((d.downloaded / d.total) * 100)) + "%";
+        });
+      } catch (e) { /* progress is a nicety, never a blocker */ }
+    }
+
+    try {
+      await invoke("install_update");
+      // Windows hands over to the installer and restarts, so this only runs if
+      // there was nothing to install after all.
+      toast("No update to install");
+    } catch (e) {
+      toast("Update failed: " + errText(e));
+    }
+    if (unlisten) unlisten();
+    update.busy = false;
+    $("updGo").disabled = false;
+    $("updSkip").disabled = false;
+    $("updGo").textContent = "Try again";
+  }
+
+  $("updGo").addEventListener("click", installUpdate);
+  $("updSkip").addEventListener("click", hideUpdate);
+  $("updCheck").addEventListener("click", function () { checkUpdates(true); });
+
   /* ---------- go ---------------------------------------------------------- */
 
   renderRail();
   render();
   scan();
+
+  if (invoke) {
+    $("updCheck").hidden = false;
+    setTimeout(function () { checkUpdates(false); }, 2500);
+  }
 })();

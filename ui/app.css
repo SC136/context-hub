@@ -623,6 +623,35 @@ mark { background: var(--mark-hit); color: var(--ink); border-radius: 0; padding
 }
 .toast.show { opacity: 1; transform: none; }
 
+.upd {
+  position: fixed; left: calc(var(--rail) + var(--gap)); bottom: calc(var(--gap) + 40px); z-index: 70;
+  display: flex; align-items: center; gap: 16px;
+  max-width: min(520px, calc(100vw - var(--rail) - 2 * var(--gap)));
+  padding: 12px 14px;
+  border: 1px solid var(--rule-2); border-radius: var(--r-sheet);
+  background: var(--raise);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, .3);
+  opacity: 0; transform: translateY(8px);
+  transition: opacity .18s var(--ease), transform .18s var(--ease);
+}
+.upd[hidden] { display: none; }
+.upd.show { opacity: 1; transform: none; }
+.upd-text { margin: 0; min-width: 0; color: var(--dim); font-size: 12px; }
+.upd-text b { color: var(--ink); font-weight: 600; }
+.upd-text span { display: block; }
+.upd-actions { display: flex; gap: 8px; flex: none; }
+
+.link {
+  align-self: flex-start;
+  margin-top: 10px; padding: 0;
+  border: 0; background: none;
+  color: var(--faint); font: 400 11.5px/1.4 var(--ui);
+  text-decoration: underline; text-underline-offset: 2px;
+  cursor: pointer;
+}
+.link:hover { color: var(--ink); }
+.link[hidden] { display: none; }
+
 .rail-scrim { position: fixed; inset: 0; z-index: 40; background: rgba(0, 0, 0, .5); }
 
 /* theme change: a circle opens from the button */
