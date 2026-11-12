@@ -1,3 +1,7 @@
+// Release builds are GUI apps. Without this Windows links the exe as a console
+// program and opens a terminal window next to the app on launch.
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
 use serde::Serialize;
 use std::fs;
 use std::io::Read;
@@ -900,9 +904,30 @@ fn create_transfer_guide(target_agent: String) -> Result<String, String> {
     Ok(guide)
 }
 
+#[cfg(windows)]
+fn attach_console() {
+    // A GUI-subsystem exe has no console of its own. When it is started from a
+    // terminal with CLI flags, reattach to that terminal so println! is visible.
+    #[link(name = "kernel32")]
+    extern "system" {
+        fn AttachConsole(process_id: u32) -> i32;
+    }
+    const ATTACH_PARENT_PROCESS: u32 = u32::MAX;
+    unsafe {
+        AttachConsole(ATTACH_PARENT_PROCESS);
+    }
+}
+
 fn main() {
+    let args: Vec<String> = std::env::args().collect();
+
+    #[cfg(windows)]
+    if args.iter().any(|a| a == "--scan-only" || a == "--projects") {
+        attach_console();
+    }
+
     // `cargo run -- --scan-only` prints what the scanner finds without opening a window.
-    if std::env::args().any(|a| a == "--projects") {
+    if args.iter().any(|a| a == "--projects") {
         let mut map: std::collections::BTreeMap<String, std::collections::BTreeMap<String, usize>> =
             Default::default();
         for spec in specs() {
@@ -930,7 +955,7 @@ fn main() {
         return;
     }
 
-    if std::env::args().any(|a| a == "--scan-only") {
+    if args.iter().any(|a| a == "--scan-only") {
         for spec in specs() {
             let exists = spec.root.exists();
             let count = if exists { collect(&spec).len() } else { 0 };
